@@ -36,10 +36,10 @@
 
 (defvar work-log-font-lock-keywords nil "XXX")
 (setq work-log-font-lock-keywords
-      '(("^[[:blank:]]*#.*$" . 'font-lock-comment-face)
+      '(("^[ \t]*#.*$" . 'font-lock-comment-face)
 	("^[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}$" . 'font-lock-string-face)
-	("^[[:blank:]]+[+*] .*$" . 'work-log-completed)
-	("^[[:blank:]]+- .*$" . 'work-log-decided-against)))
+	("^[ \t]+[+*] .*$" . 'work-log-completed)
+	("^[ \t]+- .*$" . 'work-log-decided-against)))
 
 ;;;###autoload
 (define-derived-mode work-log-mode text-mode "Work-Log"
@@ -59,9 +59,37 @@ Inspired by John Carmak's
   (set (make-local-variable 'font-lock-defaults)
        '(work-log-font-lock-keywords t nil nil nil)))
 
+;;;###autoload
+(defun work-log-new-entry ()
+  "Add new log entry for today."
+  (interactive)
+  (goto-char (point-min))
+
+  ;; If file starts with comments, skip them.
+  ;; Assume they end at first blank line.
+  (when (looking-at "[ \t]*#")
+    (search-forward "\n\n")
+    (skip-chars-forward "\n"))
+
+  (let ((date (format-time-string "%Y-%m-%d")))
+    (if (looking-at (regexp-quote date))
+	(forward-line 1)
+      (insert date "\n\n\n")
+      (forward-line -2)))
+
+  (insert "\n  "))
+
+(define-key work-log-mode-map (kbd "C-x 4 a") 'work-log-new-entry)
+
 (provide 'work-log)
 
 ;XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+;; (defvar work-log-mode-map
+;;   (let ((m (make-sparse-keymap)))
+;;     (define-key m (kbd "C-c i") 'work-log-new-entry)
+;;     m)
+;;   "Keymap for Work Log major mode.")
+
 ;; (defcustom work-log-mode-hook nil
 ;;   "Normal hook run by `work-log-mode'."
 ;;   :type 'hook
