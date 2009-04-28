@@ -34,19 +34,19 @@
   "Face for entries that were decided against on a later day."
   :group 'work-log)
 
-(defvar work-log-font-lock-keywords nil "XXX")
-(setq work-log-font-lock-keywords
-      '(("^[ \t]*#.*$" . 'font-lock-comment-face)
-	("^[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}$" . 'font-lock-string-face)
-	("^[ \t]+[+*] .*$" . 'work-log-completed)
-	("^[ \t]+- .*$" . 'work-log-decided-against)))
+(defvar work-log-date-regexp "[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}")
+
+(defvar work-log-font-lock-keywords
+  `(("^[ \t]*#.*$" . 'font-lock-comment-face)
+    (,(concat "^\\(?:" work-log-date-regexp "\\)") . 'font-lock-string-face)
+    ("^[ \t]+[+*] .*$" . 'work-log-completed)
+    ("^[ \t]+- .*$" . 'work-log-decided-against))
+  "List of keywords to highlight in Work-Log mode.")
 
 ;;;###autoload
 (define-derived-mode work-log-mode text-mode "Work-Log"
   "Mode for work logs maintenance.
-
 Format:
-
   * entry was completed on that day
   + entry was completed on a later day
   - entry was decided against on a later day
@@ -59,7 +59,6 @@ Inspired by John Carmak's
   (set (make-local-variable 'font-lock-defaults)
        '(work-log-font-lock-keywords t nil nil nil)))
 
-;;;###autoload
 (defun work-log-new-entry ()
   "Add new log entry for today."
   (interactive)
@@ -76,14 +75,59 @@ Inspired by John Carmak's
 	(forward-line 1)
       (insert date "\n\n\n")
       (forward-line -2)))
-
   (insert "\n  "))
 
-(define-key work-log-mode-map (kbd "C-x 4 a") 'work-log-new-entry)
+(defun work-log-next-date (arg)
+  "Move to the next [XXX visible] date in log.
+With argument, repeat or move backwards if negative."
+  (interactive "p")
+  (if (< arg 0) (beginning-of-line) (end-of-line))
+  (let (found-p)
+    (while (and (not (bobp)) (< arg 0))
+      (setq found-p (re-search-backward work-log-date-regexp nil 'move)
+	    arg (1+ arg)))
+    (while (and (not (eobp)) (> arg 0))
+      (setq found-p (re-search-forward work-log-date-regexp nil 'move)
+	    arg (1- arg)))
+    (when found-p (beginning-of-line))))
+
+(defun work-log-previous-date (arg)
+  "Move to the previous [XXX visible] date in log.
+With argument, repeat or move forwards if negative."
+  (interactive "p")
+  (work-log-next-date (- arg)))
+
+(define-key work-log-mode-map (kbd "C-c e") 'work-log-new-entry)
+(define-key work-log-mode-map (kbd "C-c n") 'work-log-next-date)
+(define-key work-log-mode-map (kbd "C-c p") 'work-log-previous-date)
 
 (provide 'work-log)
 
 ;XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+(when nil
+(defun work-log-hide-inactive ()
+  "Hide everything except of pending entries and their dates.
+Make completed entries, those decided against, and comments
+invisible."
+  (interactive)
+  (remove-overlays)
+  (save-excursion
+    (let ((beg (goto-char (point-min)))
+	  (end (re-search-forward "^[ \t]+[^-+* \t].*$" nil t)))
+      (when end
+	(setq end (re-search-backward work-log-date-regexp beg t)))
+      (overlay-put (make-overlay beg end) 'invisible t))))
+)
+
+;; (defun foo (from to)
+;;   (interactive "r")
+;;   (overlay-put (make-overlay from to) 'invisible t))
+
+;; (add-to-invisibility-spec '(work-log . t))
+
+;;   (let ((o (make-overlay from to)))
+;;     (overlay-put o 'invisible 'work-log))
+
 ;; (defvar work-log-mode-map
 ;;   (let ((m (make-sparse-keymap)))
 ;;     (define-key m (kbd "C-c i") 'work-log-new-entry)
