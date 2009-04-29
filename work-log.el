@@ -34,25 +34,34 @@
   "Face for entries that were decided against on a later day."
   :group 'work-log)
 
+(defvar work-log-indent "  "
+  "Whitespace to precede log entry with.")
+
 (defvar work-log-date-regexp "[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}")
 
+;; XXX Mark incorrectly indented lines with `font-lock-warning-face'?
 (defvar work-log-font-lock-keywords
   `(("^[ \t]*#.*$" . 'font-lock-comment-face)
     (,(concat "^\\(?:" work-log-date-regexp "\\)") . 'font-lock-string-face)
-    ("^[ \t]+[+*] .*$" . 'work-log-completed)
-    ("^[ \t]+- .*$" . 'work-log-decided-against))
+    (,(concat "^" work-log-indent "[+*].*$") . 'work-log-completed)
+    (,(concat "^" work-log-indent "-.*$") . 'work-log-decided-against))
   "List of keywords to highlight in Work-Log mode.")
 
 ;;;###autoload
 (define-derived-mode work-log-mode text-mode "Work-Log"
   "Mode for work logs maintenance.
+Inspired by John Carmak's
+<http://doom-ed.com/blog/1997/10/10/last-two-months-of-work-log>.
+
 Format:
   * entry was completed on that day
   + entry was completed on a later day
   - entry was decided against on a later day
 
-Inspired by John Carmak's
-<http://doom-ed.com/blog/1997/10/10/last-two-months-of-work-log>.
+Dates start at beginning of line. Date format is `%Y-%m-%d'
+(e.g., `2009-04-29').
+
+Lines having `#' as first non-whitespace character are comments.
 
 \\{work-log-mode-map}"
   (set (make-local-variable 'comment-start) "#") ; enable `M-;'
@@ -97,27 +106,53 @@ With argument, repeat or move forwards if negative."
   (interactive "p")
   (work-log-next-date (- arg)))
 
+(defun work-log-hide-inactive ()
+  "Hide everything except of pending (active) entries and their dates.
+Make completed entries, those decided against, and comments invisible."
+  (interactive)
+  (remove-overlays)
+  (save-excursion
+    (goto-char (point-min))
+    (let (beg end)
+      (while (not (eobp))
+	(setq beg (point))
+	(when (re-search-forward	; "active" entry
+	       (concat "^" work-log-indent "[^-+* \t#{}]")
+	       nil 'move)
+	  (work-log-next-date -1))
+	(setq end (point))
+	(cond ((< beg end)
+	       (overlay-put (make-overlay beg end) 'invisible t))
+	      ((> beg end)
+	       (error "Infinite loop (%d-%d)" beg end)))
+	(when (re-search-forward	; "inactive" entry or comment
+	       (concat "^\\(" work-log-indent "[-+*]\\|[ \t]*#\\)")
+	       nil 'move)
+	  (beginning-of-line))))))
+
+(defun work-log-show-inactive ()
+  "Show any hidden text.
+See also `work-log-hide-inactive'."
+  (interactive)
+  (remove-overlays))
+
 (define-key work-log-mode-map (kbd "C-c e") 'work-log-new-entry)
 (define-key work-log-mode-map (kbd "C-c n") 'work-log-next-date)
 (define-key work-log-mode-map (kbd "C-c p") 'work-log-previous-date)
+(define-key work-log-mode-map (kbd "C-c h") 'work-log-hide-inactive)
+(define-key work-log-mode-map (kbd "C-c s") 'work-log-show-inactive)
 
 (provide 'work-log)
 
 ;XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-(when nil
-(defun work-log-hide-inactive ()
-  "Hide everything except of pending entries and their dates.
-Make completed entries, those decided against, and comments
-invisible."
-  (interactive)
-  (remove-overlays)
-  (save-excursion
-    (let ((beg (goto-char (point-min)))
-	  (end (re-search-forward "^[ \t]+[^-+* \t].*$" nil t)))
-      (when end
-	(setq end (re-search-backward work-log-date-regexp beg t)))
-      (overlay-put (make-overlay beg end) 'invisible t))))
-)
+;; (let ((end 0) overlap-found-p)
+;;   (dolist (se
+;; 	   (sort (mapcar (lambda (o) (list (overlay-start o) (overlay-end o)))
+;; 			 (overlays-in (point-min) (point-max)))
+;; 		 (lambda (x y) (< (car x) (car y))))
+;; 	   overlap-found-p)
+;;     (setq overlap-found-p (or overlap-found-p (<= (cadr se) end))
+;; 	  end (cadr se))))
 
 ;; (defun foo (from to)
 ;;   (interactive "r")
