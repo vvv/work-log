@@ -136,46 +136,15 @@ See also `work-log-hide-inactive'."
   (interactive)
   (remove-overlays))
 
-(define-key work-log-mode-map (kbd "C-c e") 'work-log-new-entry)
-(define-key work-log-mode-map (kbd "C-c n") 'work-log-next-date)
-(define-key work-log-mode-map (kbd "C-c p") 'work-log-previous-date)
-(define-key work-log-mode-map (kbd "C-c h") 'work-log-hide-inactive)
-(define-key work-log-mode-map (kbd "C-c s") 'work-log-show-inactive)
+;;;; Key bindings. XXX DOCUMENTME
+(mapc
+ (lambda (binding)
+   (dolist (c '(nil "\\C-"))
+     (define-key work-log-mode-map
+       (car (read-from-string (concat "\"\\C-c" c (car binding) "\"")))
+       (intern (concat "work-log-" (symbol-name (cadr binding)))))))
+ '(("e" new-entry) ; ==> `work-log-new-entry' is bound to `C-c C-e', `C-c e'
+   ("n" next-date) ("p" previous-date)
+   ("h" hide-inactive) ("s" show-inactive)))
 
 (provide 'work-log)
-
-;XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-;; (let ((end 0) overlap-found-p)
-;;   (dolist (se
-;; 	   (sort (mapcar (lambda (o) (list (overlay-start o) (overlay-end o)))
-;; 			 (overlays-in (point-min) (point-max)))
-;; 		 (lambda (x y) (< (car x) (car y))))
-;; 	   overlap-found-p)
-;;     (setq overlap-found-p (or overlap-found-p (<= (cadr se) end))
-;; 	  end (cadr se))))
-
-;; (defun foo (from to)
-;;   (interactive "r")
-;;   (overlay-put (make-overlay from to) 'invisible t))
-
-;; (add-to-invisibility-spec '(work-log . t))
-
-;;   (let ((o (make-overlay from to)))
-;;     (overlay-put o 'invisible 'work-log))
-
-;; (defvar work-log-mode-map
-;;   (let ((m (make-sparse-keymap)))
-;;     (define-key m (kbd "C-c i") 'work-log-new-entry)
-;;     m)
-;;   "Keymap for Work Log major mode.")
-
-;; (defcustom work-log-mode-hook nil
-;;   "Normal hook run by `work-log-mode'."
-;;   :type 'hook
-;;   :group 'work-log)
-
-;; (defvar work-log-syntax-table
-;;   (let ((x (make-syntax-table)))
-;;     (modify-syntax-entry ?# "<" x)
-;;     (modify-syntax-entry ?\n ">" table)
-;;     x))
