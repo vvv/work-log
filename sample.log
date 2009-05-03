@@ -1,0 +1,64 @@
+## -*- work-log -*-
+##
+## * entry was completed on that day
+## + entry was completed on a later day
+## - entry was decided against on a later day
+##
+## See <http://doom-ed.com/blog/1997/10/10/last-two-months-of-work-log>
+## ---------------------------------------------------------------------
+
+2009-05-02
+
+  advertise work-log.el (ru_emacs, emacs?)
+  repair Vostro's keyboard
+
+2009-04-10
+
+  cannot save hpOV attachments
+
+  - list of call transaction types (Re: WRK-126200)
+
+2009-04-09
+
+  + hack "log-mode": start with implementing `C-x 4 a' (change-log-mode)
+  + fix jabber-el's "Idle" status
+
+2009-04-07
+
+  finish processUssd2.in
+  implement "w4" macros for TOC sections
+
+  * new processSdp
+
+2009-03-10
+
+  + qemu.sh fails (Could not initialize device 'tap') {
+    modprobe tun
+    udevadm settle
+    ifup tap0
+  }
+
+  + shrink recdump field #9 (64 characters max)
+
+  - "Farewell to Ekotel!" preprocessing changes
+
+2009-03-04
+
+  * ask for updated SDP CDR specification
+  * explain FORIS people how to distinguish USSD2 events in SDP CDRs
+
+  + [processSdp] update field #9 of SDP recdump
+
+  - edit plain text Google docs in Emacs ==> one and only LOG file
+  - patch `ghostscript' package (configurable `-sPAPERSIZE')
+
+2009-03-02
+
+  * mysql with cyrillic letters {
+      LANG=ru_RU.cp1251 mysql
+      screen> :encoding cp1251
+    }
+  * make Bugzilla (BZ) accessible via Apache
+
+  + create a bug in BZ web UI, adding self to `CC'
+  + receive email from BZ
