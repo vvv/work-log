@@ -113,21 +113,21 @@ Make completed entries, those decided against, and comments invisible."
   (remove-overlays)
   (save-excursion
     (goto-char (point-min))
-    (let (beg end)
+    (let ((active-entry   (concat "^"    work-log-indent "[^-+* \t#{}]"))
+	  ; NB: `inactive-entry' matches comments as well
+	  (inactive-entry (concat "^\\(" work-log-indent "[-+*]\\|[ \t]*#\\)"))
+	  beg end)
       (while (not (eobp))
 	(setq beg (point))
-	(when (re-search-forward	; "active" entry
-	       (concat "^" work-log-indent "[^-+* \t#{}]")
-	       nil 'move)
+	(when (re-search-forward active-entry nil 'move)
 	  (work-log-next-date -1))
 	(setq end (point))
-	(cond ((< beg end)
-	       (overlay-put (make-overlay beg end) 'invisible t))
-	      ((> beg end)
-	       (error "Infinite loop (%d-%d)" beg end)))
-	(when (re-search-forward	; "inactive" entry or comment
-	       (concat "^\\(" work-log-indent "[-+*]\\|[ \t]*#\\)")
-	       nil 'move)
+
+	(cond
+	 ((< beg end) (overlay-put (make-overlay beg end) 'invisible t))
+	 ((> beg end) (error "Infinite loop (%d-%d)" beg end)))
+
+	(when (re-search-forward inactive-entry nil 'move)
 	  (beginning-of-line))))))
 
 (defun work-log-show-inactive ()
