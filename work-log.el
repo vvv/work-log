@@ -37,12 +37,12 @@
 (defvar work-log-indent "  "
   "Whitespace to precede log entry with.")
 
-(defvar work-log-date-regexp "[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}")
+(defvar work-log-date-regexp "^[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}")
 
 ;; XXX Mark incorrectly indented lines with `font-lock-warning-face'?
 (defvar work-log-font-lock-keywords
   `(("^[ \t]*#.*$" . 'font-lock-comment-face)
-    (,(concat "^\\(?:" work-log-date-regexp "\\)") . 'font-lock-string-face)
+    (,work-log-date-regexp . 'font-lock-string-face)
     (,(concat "^" work-log-indent "[+*].*$") . 'work-log-completed)
     (,(concat "^" work-log-indent "-.*$") . 'work-log-decided-against))
   "List of keywords to highlight in Work-Log mode.")
@@ -113,22 +113,47 @@ Make completed entries, those decided against, and comments invisible."
   (remove-overlays)
   (save-excursion
     (goto-char (point-min))
-    (let ((active-entry   (concat "^"    work-log-indent "[^-+* \t#{}]"))
-	  ; NB: `inactive-entry' matches comments as well
-	  (inactive-entry (concat "^\\(" work-log-indent "[-+*]\\|[ \t]*#\\)"))
-	  beg end)
+    (let ((beg  (point))  ; start of "inactive" region
+	  (date (point))  ; last seen date
+	  active-p        ; is current region "active"?
+
+	  ;; regexps
+	  (active-entry (concat "^" work-log-indent "[^-+* \t#{}]"))
+	  (inactive-entry-or-comment
+	   (concat "^\\(?:" work-log-indent "[-+*]\\|[ \t]*#\\)"))
+
+	  ;; helper functions
+	  (hide (lambda (beg end)
+		  (overlay-put (make-overlay beg end) 'invisible t)))
+;; 	  (hide (lambda (beg end)
+;; 		  (save-excursion
+;; 		    (goto-char beg) (insert "[[")
+;; 		    (goto-char (+ 2 end)) (insert "]]"))))
+	  (next-line (lambda (pos)
+		       (save-excursion
+			 (goto-char pos)
+			 (forward-line)
+			 (point)))))
+
       (while (not (eobp))
-	(setq beg (point))
-	(when (re-search-forward active-entry nil 'move)
-	  (work-log-next-date -1))
-	(setq end (point))
+;; 	(when (looking-at "  active (9)") (edebug)) ; XXX
+	(cond ((looking-at work-log-date-regexp) (setq date (point)))
 
-	(cond
-	 ((< beg end) (overlay-put (make-overlay beg end) 'invisible t))
-	 ((> beg end) (error "Infinite loop (%d-%d)" beg end)))
+	      ((looking-at active-entry)
+	       (unless active-p
+		 (setq active-p t)
+		 (cond ((< date beg)
+			(funcall hide (funcall next-line date) (point)))
+		       ((> date beg)
+			(funcall hide beg date))
+		       (t (error "Impossible happened: date == beg (== %d)"
+				 beg)))))
 
-	(when (re-search-forward inactive-entry nil 'move)
-	  (beginning-of-line))))))
+	      ((looking-at inactive-entry-or-comment)
+	       (when active-p (setq active-p nil beg (point)))))
+	(forward-line))
+
+      (unless active-p (funcall hide beg (point))))))
 
 (defun work-log-show-inactive ()
   "Show any hidden text.

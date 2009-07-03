@@ -1,0 +1,63 @@
+# -*- work-log -*-
+
+0000-00-00 # inactive-1
+
+  + inactive-1 { garbage..
+    ..garbage }
+
+0000-00-00 # active-1
+
+  active-1 { garbage..
+    ..garbage }
+
+0000-00-00 # active-2
+
+  + inactive-2 { garbage..
+    ..garbage }
+
+  active-2 { garbage..
+    ..garbage }
+
+0000-00-00 # active-3
+
+  active-3 { garbage..
+    ..garbage }
+
+  + inactive-3 { garbage..
+    ..garbage }
+
+# ----------------------------------------------------------------------
+
+0000-00-00 # inactive-4
+
+  + inactive-4
+
+0000-00-00 # active-4
+
+  active-4
+
+0000-00-00 # active-5
+
+  + inactive-5
+
+  active-5
+
+0000-00-00 # active-6
+
+  active-6
+
+  + inactive-6
+# ----------------------------------------------------------------------
+0000-00-00 # inactive-7
+  + inactive-7
+0000-00-00 # active-7
+  active-7
+0000-00-00 # active-8
+  + inactive-8
+  active-8
+0000-00-00 # active-9,10
+  active-9
+  + inactive-9
+  active-10
+0000-00-00 # inactive-10
+  + inactive-10
