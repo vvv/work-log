@@ -112,48 +112,120 @@ Make completed entries, those decided against, and comments invisible."
   (interactive)
   (remove-overlays)
   (save-excursion
-    (goto-char (point-min))
-    (let ((beg  (point))  ; start of "inactive" region
-	  (date (point))  ; last seen date
-	  active-p        ; is current region "active"?
+    (let (;; stored position(s)
+	  si   ; start of interactive region
+	  sde  ; two positions around a date: (START-OF-DATE . END-OF-DATE)
 
 	  ;; regexps
-	  (active-entry (concat "^" work-log-indent "[^-+* \t#{}]"))
+	  (active-entry (concat work-log-indent "[^-+* \t#{}]"))
 	  (inactive-entry-or-comment
-	   (concat "^\\(?:" work-log-indent "[-+*]\\|[ \t]*#\\)"))
+	   (concat "\\(?:" work-log-indent "[-+*]\\|[ \t]*#\\)"))
 
 	  ;; helper functions
 	  (hide (lambda (beg end)
-		  (overlay-put (make-overlay beg end) 'invisible t)))
-;; 	  (hide (lambda (beg end)
-;; 		  (save-excursion
-;; 		    (goto-char beg) (insert "[[")
-;; 		    (goto-char (+ 2 end)) (insert "]]"))))
-	  (next-line (lambda (pos)
-		       (save-excursion
-			 (goto-char pos)
-			 (forward-line)
-			 (point)))))
+		  (unless (eq beg end)
+		    (overlay-put (make-overlay beg end) 'invisible t))))
+;; 		    (overlay-put (make-overlay beg end)
+;; 				 'face '(:inverse-video t)))))
+	  (next-line-pos (lambda () (save-excursion (forward-line) (point)))))
 
+      (goto-char (point-min))
       (while (not (eobp))
-;; 	(when (looking-at "  active (9)") (edebug)) ; XXX
-	(cond ((looking-at work-log-date-regexp) (setq date (point)))
+	(cond ((looking-at inactive-entry-or-comment)
+	       (unless si (setq si (point))))
+
+	      ((looking-at work-log-date-regexp)
+	       (when sde
+		 ;; XXX This solution is suboptimal -- unneeded
+		 ;; overlays get created (e.g., 3 overlays for
+		 ;; "adidida" region where 1 would suffice).
+		 ;; Good news: no more "hanging" dates.
+		 (funcall hide (car sde) (point)))
+	       (setq sde (cons (point) (funcall next-line-pos))))
 
 	      ((looking-at active-entry)
-	       (unless active-p
-		 (setq active-p t)
-		 (cond ((< date beg)
-			(funcall hide (funcall next-line date) (point)))
-		       ((> date beg)
-			(funcall hide beg date))
-		       (t (error "Impossible happened: date == beg (== %d)"
-				 beg)))))
+	       (cond (si
+		      (if (not sde)
+			  (funcall hide si (point))
+			(when (< si (car sde))
+			  (funcall hide si (car sde)))
+			(funcall hide (cdr sde) (point))
+			(setq sde nil))
+		       (setq si nil))
+		     (sde
+		      (setq sde nil)))))
 
-	      ((looking-at inactive-entry-or-comment)
-	       (when active-p (setq active-p nil beg (point)))))
 	(forward-line))
 
-      (unless active-p (funcall hide beg (point))))))
+      ;; end of buffer
+      (when si
+	(if (and sde (< (car sde) si))
+	    (funcall hide (car sde) (point))
+	  (funcall hide si (point)))))))
+
+(when nil ; XXX --------------------------------------------------------
+(defun foo ()
+  "Hide everything except of pending (active) entries and their dates.
+Make completed entries, those decided against, and comments invisible."
+  (interactive)
+  (remove-overlays)
+  (save-excursion
+    (let (;; stored position(s)
+	  si   ; start of interactive region
+	  sde  ; two positions around a date: (START-OF-DATE . END-OF-DATE)
+
+	  ;; regexps
+;; 	  (active-entry (concat work-log-indent "[^-+* \t#{}]"))
+;; 	  (inactive-entry-or-comment
+;; 	   (concat "\\(?:" work-log-indent "[-+*]\\|[ \t]*#\\)"))
+	  (active-entry "a")
+	  (inactive-entry-or-comment "i")
+	  (work-log-date-regexp "d") ; XXX
+
+	  ;; helper functions
+	  (hide (lambda (beg end)
+		  (unless (eq beg end)
+;; 		    (overlay-put (make-overlay beg end) 'invisible t))))
+		    (overlay-put (make-overlay beg end)
+				 'face '(:inverse-video t)))))
+;; 	  (next-line-pos (lambda () (save-excursion (forward-line) (point)))))
+	  (next-line-pos (lambda () (save-excursion (forward-char) (point)))))
+
+      (goto-char (point-min))
+      (while (not (eobp))
+	(cond ((looking-at inactive-entry-or-comment)
+	       (unless si (setq si (point))))
+
+	      ((looking-at work-log-date-regexp)
+	       (when sde
+		 ;; XXX This solution is suboptimal -- unneeded
+		 ;; overlays get created (e.g., 3 overlays for
+		 ;; "adidida" region where 1 would suffice).
+		 ;; Good news: no more "hanging" dates.
+		 (funcall hide (car sde) (point)))
+	       (setq sde (cons (point) (funcall next-line-pos))))
+
+	      ((looking-at active-entry)
+	       (cond (si
+		      (if (not sde)
+			  (funcall hide si (point))
+			(when (< si (car sde))
+			  (funcall hide si (car sde)))
+			(funcall hide (cdr sde) (point))
+			(setq sde nil))
+		       (setq si nil))
+		     (sde
+		      (setq sde nil)))))
+
+;; 	(forward-line))
+	(forward-char))
+
+      ;; end of buffer
+      (when si
+	(if (and sde (< (car sde) si))
+	    (funcall hide (car sde) (point))
+	  (funcall hide si (point)))))))
+) ; XXX ----------------------------------------------------------------
 
 (defun work-log-show-inactive ()
   "Show any hidden text.
