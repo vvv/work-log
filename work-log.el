@@ -1,6 +1,7 @@
-;;; work-log.el --- work log maintenance commands for Emacs
+;;; work-log.el --- Emacs mode for working with TODO lists formatted
+;;; "à la John Carmack"
 
-;; Copyright (C) 2009  Valery V. Vorotyntsev <valery.vv@gmail.com>
+;; Copyright (C) 2009, 2010  Valery V. Vorotyntsev <valery.vv@gmail.com>
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -49,9 +50,7 @@
 
 ;;;###autoload
 (define-derived-mode work-log-mode text-mode "Work-Log"
-  "Mode for work logs maintenance.
-Inspired by John Carmak's
-<http://doom-ed.com/blog/1997/10/10/last-two-months-of-work-log>.
+  "Mode for working with TODO lists formatted ``à la John Carmack''.
 
 Format:
   * entry was completed on that day
@@ -62,6 +61,19 @@ Dates start at beginning of line. Date format is `%Y-%m-%d'
 (e.g., `2009-04-29').
 
 Lines having `#' as first non-whitespace character are comments.
+
+> When I accomplish something, I write a * line that day.
+>
+> Whenever a bug / missing feature is mentioned during the day and I
+> don't fix it, I make a note of it. Some things get noted many times
+> before they get fixed.
+>
+> Occasionally I go back through the old notes and mark with a + the
+> things I have since fixed.
+
+See also
+    http://doom-ed.com/blog/1997/10/10/last-two-months-of-work-log
+    http://www.team5150.com/~andrew/carmack/plan.html
 
 \\{work-log-mode-map}"
   (set (make-local-variable 'comment-start) "#") ; enable `M-;'
