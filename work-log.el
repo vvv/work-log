@@ -1,7 +1,7 @@
 ;;; work-log.el --- Emacs mode for working with TODO lists formatted
 ;;; "à la John Carmack"
 
-;; Copyright (C) 2009, 2010  Valery V. Vorotyntsev <valery.vv@gmail.com>
+;; Copyright (C) 2009-2011  Valery V. Vorotyntsev <valery.vv@gmail.com>
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -42,7 +42,7 @@
 
 ;; XXX Mark incorrectly indented lines with `font-lock-warning-face'?
 (defvar work-log-font-lock-keywords
-  `(("^[ \t]*#.*$" . 'font-lock-comment-face)
+  `(("^#.*$" . 'font-lock-comment-face)
     (,work-log-date-regexp . 'font-lock-string-face)
     (,(concat "^" work-log-indent "[+*].*$") . 'work-log-completed)
     (,(concat "^" work-log-indent "-.*$") . 'work-log-decided-against))
